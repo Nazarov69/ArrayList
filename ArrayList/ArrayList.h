@@ -1,337 +1,226 @@
 #pragma once
 #include <iostream>
-using namespace std;
+#include "Queue.h"
+#include "MyException.h"
 
 template <class ValType>
-class ArrayIterator;
-
-template <class ValType>
-class ArrayList{
-	ValType* array;
-	ValType* pointers;
+class TArrayList{
+	ValType* mas;
+	int* nextIndex;
+	int* prevIndex;
 	int length;
-	int count;
 	int first;
+	int last;
+	int count;
+	TQueue<int> fElem;
 public:
-	ArrayList(int length = 1);
-	ArrayList(ArrayList<ValType>& v);
-	~ArrayList();
+	TArrayList(int length = 10);
+	TArrayList(TArrayList<ValType>& v);
+	~TArrayList();
 
-	ArrayList<ValType>& operator = (ArrayList<ValType>& v);
+	void Push(int index, ValType elem);
+	void PushFirst(ValType elem);
+	void PushLast(ValType elem);
 
-	void InsFirst(ValType num);
-	void DelFirst();
+	ValType Get(int index);
 	ValType GetFirst();
-
-	void InsLast(ValType num);
-	void DelLast();
 	ValType GetLast();
-
-	void Ins(ArrayIterator<ValType>& element, ValType num);
-	void Del(ArrayIterator<ValType>& element);
 
 	bool IsFull();
 	bool IsEmpty();
-	
-	ArrayIterator<ValType> ListBegin();
-	ArrayIterator<ValType> ListEnd();
-
-	template <class ValType1>
-	friend ostream& operator << (ostream& ostr, const ArrayList<ValType1>& v);
-	template <class ValType1>
-	friend istream& operator >> (istream& istr, ArrayList<ValType1>& v);
-
-	template <class ValType>
-	friend class ArrayIterator;
-
-	int GetCount();
 };
 
-template<class ValType1>
-ostream& operator<<(ostream& ostr, const ArrayList<ValType1>& v) {
-	int temp = v.first;
-
-	while (v.pointers[temp] != -1) {
-		ostr << v.array[temp];
-		i = v.pointers[temp];
-	}
-
-	return ostr;
-}
-
-template<class ValType1>
-istream& operator>>(istream& istr, ArrayList<ValType1>& v) {
-	int count;
-	istr >> count;
-
-	for (int i = 0; i < count; i++) {
-		ValType1 temp;
-		istr >> temp;
-		v.InsLast(temp);
-	}
-
-	return istr;
-}
-
-template<class ValType>
-ArrayList<ValType>::ArrayList(int length){
+template <class ValType>
+TArrayList<ValType>::TArrayList(int length) : fElem(length){
 	if (length <= 0)
-		throw logic_error("Input error: invalide value of ArrayList length in ArrayList");
+		throw TMyException("Error! Size must be positive!\n");
+	
+	else{
+		this->length = length;
+		this->count = 0;
+		this->first = -1;
+		this->last = -1;
 
-	this->length = length;
+		mas = new ValType[this->length];
+		nextIndex = new ValType[this->length];
+		prevIndex = new ValType[this->length];
 
-	array = new ValType[length];
-	pointers = new ValType[length];
-	count = 0;
-	first = -1;
-
-	for (int i = 0; i < length; i++)
-		pointers[i] = -2;
+		for (int i = 0; i < this->length; i++){
+			nextIndex[i] = -2;
+			prevIndex[i] = -2;
+			fElem.Push(i);
+		}
+	}
 }
 
-template<class ValType>
-ArrayList<ValType>::ArrayList(ArrayList<ValType>& v){
-	this->count = v.count;
+template <class ValType>
+TArrayList<ValType>::TArrayList(TArrayList<ValType>& v){
 	this->length = v.length;
+	this->count = v.count;
 	this->first = v.first;
+	this->last = v.last;
 
-	array = new ValType[length];
-	pointers = new ValType[length];
+	mas = new ValType[length];
+	nextIndex = new ValType[length];
+	prevIndex = new ValType[length];
+	this->fElem = v.fElem;
 
 	for (int i = 0; i < length; i++){
-		this->pointers[i] = v.pointers[i];
-		this->array[i] = v.array[i];
+		this->mas[i] = v.mas[i];
+		this->nextIndex[i] = v.nextIndex[i];
+		this->prevIndex[i] = v.prevIndex[i];
 	}
 }
 
-template<class ValType>
-ArrayList<ValType>::~ArrayList(){
-	if (array != 0){
-		delete[] array;
-		delete[] pointers;
-
-		first = -1;
-		length = 0;
-		count = 0;
-	}
+template <class ValType>
+TArrayList<ValType>::~TArrayList(){
+	delete[] mas;
+	delete[] nextIndex;
+	delete[] prevIndex;
 }
 
-template<class ValType>
-ArrayList<ValType>& ArrayList<ValType>::operator=(ArrayList<ValType>& v){
-	if (this == &v)
-		return *this;
-
-	if (this->length != v.length) {
-		delete[] array;
-		delete[] pointers;
-
-		array = new ValType[length];
-		pointers = new ValType[length];
-	}
-
-	this->count = v.count;
-	this->length = v.length;
-	this->first = v.first;
-
-	for (int i = 0; i < length; i++) {
-		this->pointers[i] = v.pointers[i];
-		this->array[i] = v.array[i];
-	}
-
-	return (*this);
-}
-
-template<class ValType>
-void ArrayList<ValType>::InsFirst(ValType num){
-	if (this->IsFull())
-		throw logic_error("Input error: invalide value of ArrayList length in InsFirst");
-
-	int i = 0;
-	for (; i < length; i++){
-		if (pointers[i] == -2)
-			break;
-	}
-
-	array[i] = num;
-	pointers[i] = first;
-	first = i;
-	count++;
-}
-
-template<class ValType>
-void ArrayList<ValType>::DelFirst() {
-	if (this->IsEmpty())
-		throw logic_error("Input error: invalide value of ArrayList length in DelFirst");
-
-	int temp = first;
-	first = pointers[first];
-	pointers[temp] = -2;
-	count--;
-}
-
-template<class ValType>
-ValType ArrayList<ValType>::GetFirst() {
-	if (this->IsEmpty())
-		throw logic_error("Input error: invalide value of ArrayList length in GetFirst");
-
-	return array[first];
-}
-
-template<class ValType>
-void ArrayList<ValType>::InsLast(ValType num){
-	if (this->IsFull())
-		throw logic_error("Input error: invalide value of ArrayList length in InsLast");
-
-	if (this->IsEmpty()){
-		first = 0;
-		array[0] = num;
-		pointers[0] = -1;
-	}
-
+template <class ValType>
+void TArrayList<ValType>::Push(int index, ValType elem){
+	if (IsFull())
+		throw TMyException("Error! List is full!\n");
+	
+	else if (index<1 || index>count - 1)
+		throw TMyException("Error! Index is out of range!\n");
+	
 	else{
-		int i = 0;
-		for (; i < length; i++){
-			if (pointers[i] == -2)
-				break;
+		int freeIndex = fElem.Get();
+		mas[freeIndex] = elem;
+		int tmp1 = first;
+		int tmp2 = nextIndex[first];
+		
+		for (int i = 0; i < index - 1; i++){
+			tmp1 = tmp2;
+			tmp2 = nextIndex[tmp2];
 		}
 
-		int temp = first;
-		while (pointers[temp] != -1)
-			temp = pointers[temp];
-
-		array[i] = num;
-		pointers[i] = -1;
-		pointers[temp] = i;
+		nextIndex[freeIndex] = tmp2;
+		nextIndex[tmp1] = freeIndex;
+		prevIndex[freeIndex] = tmp1;
+		prevIndex[tmp2] = freeIndex;
+		count++;
 	}
-	count++;
 }
 
-template<class ValType>
-void ArrayList<ValType>::DelLast() {
-	if (this->IsEmpty())
-		throw logic_error("Input error: invalide value of ArrayList length in DelFirst");
+template <class ValType>
+void TArrayList<ValType>::PushFirst(ValType elem){
+	if (IsFull())
+		throw TMyException("Error! List is full!\n");
+	else{
+		int freeIndex = fElem.Get();
+		mas[freeIndex] = elem;
+		nextIndex[freeIndex] = first;
 
-	if (pointers[first] == -1) {
-		pointers[first] = -2;
-		first = -1;
-	}
-
-	else {
-		int temp = first;
-		int tmp = pointers[first];
-
-		while (pointers[tmp] != -1) {
-			temp = tmp;
-			tmp = pointers[tmp];
-		}
-
-		pointers[temp] = -1;
-		pointers[tmp] = -2;
-	}
-	count--;
-}
-
-template<class ValType>
-ValType ArrayList<ValType>::GetLast() {
-	if (this->IsEmpty())
-		throw logic_error("Input error: invalide value of ArrayList length in GetLast");
-
-	int i = first;
-	while (pointers[i] != -1)
-		i = pointers[i];
-
-	return array[i];
-}
-
-template<class ValType>
-void ArrayList<ValType>::Ins(ArrayIterator<ValType>& element, ValType num){
-	if (this->IsFull())
-		throw logic_error("Input error: invalide value of ArrayList length in Ins");
-
-	if (this->IsEmpty()){
-		first = 0;
-		array[0] = num
-		pointers[0] = -1;
-	}
-
-	else {
-		int i = 0;
-		for (; i < length; i++) {
-			if (pointers[i] == -2)
-				break;
-		}
-
-		array[i] = num;
-		int temp = element.GetIndex();
-
-		if (element.IsGoNext()) {
-			element.GoNext();
-			pointers[i] = element.GetIndex();
-		}
+		if (first != -1)
+			prevIndex[first] = freeIndex;
 		else
-			pointers[i] = -1;
-		pointers[temp] = i;
+			last = freeIndex;
+		first = freeIndex;
+		count++;
 	}
-	count++;
 }
 
-template<class ValType>
-void ArrayList<ValType>::Del(ArrayIterator<ValType>& v)
-{
-	if (this->IsEmpty())
-		throw logic_error("Input error: invalide value of ArrayList length in Del");
-
-	if (pointers[first] == -1) {
-		pointers[first] = -2;
-		first = -1;
-	}
-	else {
-		int temp = v.GetIndex();
-		if (v.IsGoNext()) {
-			v.GoNext();
-			pointers[temp] = v.GetIndex();
+template <class ValType>
+void TArrayList<ValType>::PushLast(ValType elem){
+	if (IsFull())
+		throw TMyException("Error! List is full!\n");
+	
+	else{
+		int freeIndex = fElem.Get();
+		mas[freeIndex] = elem;
+		
+		if (last != -1)
+			nextIndex[last] = freeIndex;
+		else{
+			first = freeIndex;
+			prevIndex[freeIndex] = -1;
 		}
-		else
-			pointers[temp] = -1;
+
+		prevIndex[freeIndex] = last;
+		last = freeIndex;
+		count++;
 	}
-	count--;
 }
 
-template<class ValType>
-bool ArrayList<ValType>::IsFull(){
-	return (count >= length);
+template <class ValType>
+ValType TArrayList<ValType>::Get(int index){
+	if (IsEmpty())
+		throw TMyException("Error! List is empty!\n");
+	
+	else{
+		if (index < 1 || index>count - 1)
+			throw TMyException("Error! Index is out of range!\n");
+		
+		else{
+			int ind = first;
+			for (int i = 0; i < index; i++)
+				ind = nextIndex[ind];
+
+			nextIndex[prevIndex[ind]] = nextIndex[ind];
+			prevIndex[nextIndex[ind]] = prevIndex[ind];
+
+			ValType tmp = mas[ind];
+			fElem.Push(ind);
+			count--;
+			return tmp;
+		}
+	}
 }
 
-template<class ValType>
-bool ArrayList<ValType>::IsEmpty(){
+template <class ValType>
+ValType TArrayList<ValType>::GetFirst(){
+	if (IsEmpty())
+		throw TMyException("Error! List is empty!\n");
+	
+	else{
+		ValType elem = mas[first];
+		fElem.Push(first);
+		int newStart = nextIndex[first];
+		nextIndex[first] = prevIndex[first] = -2;
+
+		if (newStart != -1)
+			prevIndex[newStart] = -1;
+		count--;
+		first = newStart;
+		return elem;
+	}
+}
+
+template <class ValType>
+ValType TArrayList<ValType>::GetLast(){
+	if (IsEmpty())
+		throw TMyException("Error! List is empty!\n");
+	
+	else{
+		ValType elem = mas[last];
+		int newEnd = prevIndex[last];
+		prevIndex[last] = nextIndex[last] = -2;
+		fElem.Push(last);
+		last = newEnd;
+
+		if (newEnd != -1)
+			nextIndex[newEnd] = -1;
+		else
+			first = -1;
+		count--;
+		return elem;
+	}
+}
+
+template <class ValType>
+bool TArrayList<ValType>::IsFull() {
+	return(count == length);
+}
+
+template <class ValType>
+bool TArrayList<ValType>::IsEmpty(){
 	return (count == 0);
+	
+	
 }
-
-template<class ValType>
-int ArrayList<ValType>::GetCount(){
-	return count;
-}
-
-template<class ValType>
-ArrayIterator<ValType> ArrayList<ValType>::ListBegin(){
-	if (this->IsEmpty())
-		throw logic_error("Input error: invalide value of ArrayList length in ListBegin");
-
-	return ArrayIterator<ValType>(*this, first);
-}
-
-template<class ValType>
-ArrayIterator<ValType> ArrayList<ValType>::ListEnd()
-{
-	if (this->IsEmpty())
-		throw logic_error("Input error: invalide value of ArrayList length in ListEnd");
-
-	int i = first;
-	while (pointers[i] != -1)
-		i = pointers[i];
-
-	return ArrayIterator<ValType>(*this, i);
-}
-
 
 
